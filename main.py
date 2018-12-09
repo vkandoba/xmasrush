@@ -20,22 +20,19 @@ def parseTile(tile):
     parsed = {'up' : int(tile[0]), 'right': int(tile[1]), 'down': int(tile[2]), 'left': int(tile[3])}
     return parsed
 
+def getNeighboring(tiles, parents, x, y, dx, dy, dirTo, dirFrom):
+    if canBeNeighborings(parents, x + dx, y + dy) and tiles[x][y][dirTo] == 1 and tiles[x+dx][y+dy][dirFrom] == 1:
+        return (x+dx, y+dy, dirTo.upper())
+    return None
+        
 def getNeighborings(tiles, parents, x, y):
     # print(tiles[x][y], file=sys.stderr)
-    neighborings = []
-    if canBeNeighborings(parents, x, y-1) and tiles[x][y]['up'] == 1 and tiles[x][y-1]['down'] == 1:
-        parents[x][y-1] = (x, y, 'UP')
-        neighborings.append((x, y-1))
-    if canBeNeighborings(parents, x+1, y) and tiles[x][y]['right'] == 1 and tiles[x+1][y]['left'] == 1:
-        parents[x+1][y] = (x, y, 'RIGHT')
-        neighborings.append((x+1, y))
-    if canBeNeighborings(parents, x, y+1) and tiles[x][y]['down'] == 1 and tiles[x][y+1]['up'] == 1:
-        parents[x][y+1] = (x, y, 'DOWN')
-        neighborings.append((x, y+1))        
-    if canBeNeighborings(parents, x-1, y) and tiles[x][y]['left'] == 1 and tiles[x-1][y]['right'] == 1:
-        parents[x-1][y] = (x, y, 'LEFT')
-        neighborings.append((x-1, y))
-    return neighborings;
+    neighborings = list(filter(lambda x: x, 
+                            map(lambda diff: getNeighboring(tiles, parents, x, y, *diff), 
+                                [(0, -1, 'up', 'down'), (1, 0, 'right', 'left'), (0, 1, 'down', 'up'), (-1, 0, 'left', 'right')])))
+    for n in neighborings:
+        parents[n[0]][n[1]] = (x, y, n[2])
+    return map(lambda x: x[0:2], neighborings);
 
 def getPath(parents, startX, startY, targetX, targetY):
     print(startX, startY, targetX, targetY, file=sys.stderr)
