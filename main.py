@@ -16,10 +16,6 @@ def isCoordinate(x, y):
 def canBeNeighborings(parents, x, y):
     return isCoordinate(x, y) and parents[x][y] == 0
 
-def parseTile(tile):
-    parsed = {'up' : int(tile[0]), 'right': int(tile[1]), 'down': int(tile[2]), 'left': int(tile[3])}
-    return parsed
-
 def getNeighboring(tiles, parents, x, y, dx, dy, dirTo, dirFrom):
     if canBeNeighborings(parents, x + dx, y + dy) and tiles[x][y][dirTo] == 1 and tiles[x+dx][y+dy][dirFrom] == 1:
         return (x+dx, y+dy, dirTo.upper())
@@ -54,7 +50,7 @@ def findPath(tiles, startX, startY, targetX, targetY):
             return getPath(parents, targetX, targetY, startX, startY);
         neighborings = getNeighborings(tiles, parents, *p)
         points.extend(neighborings)
-    return False
+    return None
 
 def getPush(tiles, playerX, playerY, targetX, targetY):
     if playerX != targetX:
@@ -72,10 +68,10 @@ def getPush(tiles, playerX, playerY, targetX, targetY):
 def findPathToAny(tiles, playerX, playerY, quests):
     for q in quests:
         path = findPath(tiles, player_x, player_y, q['x'], q['y'])
-        if path != False:
+        if path:
             dirs = list(map(lambda x: x[2], path))
             return ' '.join(dirs)
-    return False;
+    return None;
     
 def getPushToAny(tiles, playerX, playerY, quests):
     for q in quests:
@@ -88,8 +84,8 @@ def getPushToAny(tiles, playerX, playerY, quests):
 # game loop
 while True:
     turn_type = int(input())
-    tiles1 = [list(map(parseTile, input().split())) for i in range(side+1)]
-
+    tiles1 = [list(map(lambda s: dict(zip(['up', 'right', 'down', 'left'], map(int, s))), input().split())) for i in range(side+1)]
+  
     tiles = list(zip(*tiles1))
     
     # num_player_cards: the total number of quests for a player (hidden and revealed)
@@ -106,18 +102,10 @@ while True:
     
     num_quests = int(input())  # the total number of revealed quests for both players
     myQuests = list(map(lambda x: items[f'{x[0]}.{x[1]}'], filter(lambda x: x[1] == 0, [list(map(safeInt, input().split())) for _ in range(num_quests)])))
-
-    # print(tname, items[tname], file=sys.stderr)
-
-    # Write an action using print
-    # To debug: print("Debug messages...", file=sys.stderr)
-    # print(items[tname]['x'], items[tname]['y'], file=sys.stderr)
-
-    # PUSH <id> <direction> | MOVE <direction> | PASS
     
     if turn_type == 1:
         path = findPathToAny(tiles, player_x, player_y, myQuests)
-        if path != False:
+        if path:
             print("MOVE " + path)
         else:
             print("PASS")
