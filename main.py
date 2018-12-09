@@ -120,14 +120,7 @@ while True:
                            [dict(zip(['name', 'x', 'y', 'player'], map(safeInt, input().split()))) for _ in range(num_items)])))
     
     num_quests = int(input())  # the total number of revealed quests for both players
-    myQuests = []
-    for i in range(num_quests):
-        quest_item_name, quest_player_id = input().split()
-        # print(quest_item_name, quest_player_id, file=sys.stderr)
-        quest_player_id = quest_player_id
-        if quest_player_id == '0':
-            tname = f'{quest_item_name}.{quest_player_id}'
-            myQuests.append(items[tname])
+    myQuests = list(map(lambda x: items[f'{x[0]}.{x[1]}'], filter(lambda x: x[1] == 0, [list(map(safeInt, input().split())) for _ in range(num_quests)])))
 
     # print(tname, items[tname], file=sys.stderr)
 
