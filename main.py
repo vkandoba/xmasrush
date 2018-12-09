@@ -37,32 +37,22 @@ def getNeighborings(tiles, parents, x, y):
 def getPath(parents, startX, startY, targetX, targetY):
     path = []
     pos = parents[startX][startY]
-    while (pos[0], pos[1]) != (targetX, targetY):
+    while pos[0:2] != (targetX, targetY):
         path.insert(0, pos)
         pos = parents[pos[0]][pos[1]]
     path.insert(0, pos)
     return path
 
 def findPath(tiles, startX, startY, targetX, targetY):
-    parents = []
-    for i in range(7):
-        parents.append([])
-        for j in range(7):
-            parents[i].append(0)
+    parents = [[0 for _ in range(side+1)] for _ in range(side+1)]
     parents[startX][startY] = ();
-    # print("find path", startX, startY, targetX, targetY, file=sys.stderr)
     neighborings = getNeighborings(tiles, parents, startX, startY)
-    # for n in neighborings:
-        # print("find path neighborings", n, parents[n[0]][n[1]], file=sys.stderr)
     points = deque(neighborings)
     while len(points) > 0:
         p = points.popleft()
-        # print("find path p", p, file=sys.stderr)
         if p == (targetX, targetY):
             return getPath(parents, targetX, targetY, startX, startY);
         neighborings = getNeighborings(tiles, parents, *p)
-        # for n in neighborings:
-            # print("find path neighborings", n, parents[n[0]][n[1]], file=sys.stderr)
         points.extend(neighborings)
     return False
 
@@ -98,7 +88,7 @@ def getPushToAny(tiles, playerX, playerY, quests):
 # game loop
 while True:
     turn_type = int(input())
-    tiles1 = [list(map(parseTile, input().split())) for i in range(7)]
+    tiles1 = [list(map(parseTile, input().split())) for i in range(side+1)]
 
     tiles = list(zip(*tiles1))
     
