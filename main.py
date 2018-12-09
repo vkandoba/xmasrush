@@ -4,6 +4,12 @@ from collections import deque
 
 side = 6
 
+def safeInt(str):
+    try:
+        return int(str)
+    except ValueError:
+        return str
+
 def isCoordinate(x, y):
     return 0 <= x and x <= side and 0 <= y and y <= side
 
@@ -92,28 +98,27 @@ def getPushToAny(tiles, playerX, playerY, quests):
         if push != False:
             return str(push[0]) + ' ' + push[1]
     return False;  
-    
+
 # Help the Christmas elves fetch presents in a magical labyrinth!
 # game loop
 while True:
     turn_type = int(input())
     tiles1 = [list(map(parseTile, input().split())) for i in range(7)]
 
-    tiles = list(zip(*tiles1)
+    tiles = list(zip(*tiles1))
     
     # num_player_cards: the total number of quests for a player (hidden and revealed)
     num_player_cards, player_x, player_y, player_tile = input().split()
     num_player_cards = int(num_player_cards)
     player_x = int(player_x)
     player_y = int(player_y)
+    
     input().split() #other player
     num_items = int(input())  # the total number of items available on board and on player tiles
-    # print(player_x, player_y, tiles[player_x][player_y], file=sys.stderr)
-    items = {}
-    for i in range(num_items):
-        item_name, item_x, item_y, item_player_id = input().split()
-        items[','.join([item_name, item_player_id])] = {'name': item_name, 'x' : int(item_x), 'y': int(item_y), 'player': int(item_player_id)}
-    # print(items, file=sys.stderr)
+
+    items = dict(list(map(lambda item: (f"{item['name']}.{item['player']}", item), 
+                           [dict(zip(['name', 'x', 'y', 'player'], map(safeInt, input().split()))) for _ in range(num_items)])))
+    
     num_quests = int(input())  # the total number of revealed quests for both players
     myQuests = []
     for i in range(num_quests):
@@ -121,7 +126,7 @@ while True:
         # print(quest_item_name, quest_player_id, file=sys.stderr)
         quest_player_id = quest_player_id
         if quest_player_id == '0':
-            tname = ','.join([quest_item_name, quest_player_id])
+            tname = f'{quest_item_name}.{quest_player_id}'
             myQuests.append(items[tname])
 
     # print(tname, items[tname], file=sys.stderr)
