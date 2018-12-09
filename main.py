@@ -35,11 +35,9 @@ def getNeighborings(tiles, parents, x, y):
     return map(lambda x: x[0:2], neighborings);
 
 def getPath(parents, startX, startY, targetX, targetY):
-    print(startX, startY, targetX, targetY, file=sys.stderr)
     path = []
     pos = parents[startX][startY]
     while (pos[0], pos[1]) != (targetX, targetY):
-        # print(pos, file=sys.stderr)
         path.insert(0, pos)
         pos = parents[pos[0]][pos[1]]
     path.insert(0, pos)
@@ -60,9 +58,9 @@ def findPath(tiles, startX, startY, targetX, targetY):
     while len(points) > 0:
         p = points.popleft()
         # print("find path p", p, file=sys.stderr)
-        if p[0] == targetX and p[1] == targetY:
+        if p == (targetX, targetY):
             return getPath(parents, targetX, targetY, startX, startY);
-        neighborings = getNeighborings(tiles, parents, p[0], p[1])
+        neighborings = getNeighborings(tiles, parents, *p)
         # for n in neighborings:
             # print("find path neighborings", n, parents[n[0]][n[1]], file=sys.stderr)
         points.extend(neighborings)
