@@ -4,6 +4,15 @@ from collections import deque
 
 side = 6
 
+opDir = {
+            'up': 'down',
+            'right': 'left',
+            'down': 'up',
+            'left': 'right'
+        }
+
+placeDirs = [(0, -1, 'up'), (1, 0, 'right'), (0, 1, 'down'), (-1, 0, 'left')]
+
 def safeInt(str):
     try:
         return int(str)
@@ -13,19 +22,22 @@ def safeInt(str):
 def isCoordinate(x, y):
     return 0 <= x and x <= side and 0 <= y and y <= side
 
+def nearCells(tiles, x, y):
+    return filter(lambda dir: isCoordinate(x + dir[0], y + dir[1]), placeDirs)
+
+def isLinked(tiles, x, y, dx, dy, dirTo):
+    dirFrom = opDir[dirTo]
+    return tiles[x][y][dirTo] == 1 and tiles[x + dx][y + dy][dirFrom] == 1
+
+def isClear(tiles, parents, x, y, dx, dy, dirTo):
+    return parents[x + dx][y + dy] == 0 and isLinked(tiles, x, y, dx, dy, dirTo)
+
 def canBeNeighborings(parents, x, y):
     return isCoordinate(x, y) and parents[x][y] == 0
-
-def getNeighboring(tiles, parents, x, y, dx, dy, dirTo, dirFrom):
-    if canBeNeighborings(parents, x + dx, y + dy) and tiles[x][y][dirTo] == 1 and tiles[x+dx][y+dy][dirFrom] == 1:
-        return (x+dx, y+dy, dirTo.upper())
-    return None
         
 def getNeighborings(tiles, parents, x, y):
     # print(tiles[x][y], file=sys.stderr)
-    neighborings = list(filter(lambda x: x, 
-                            map(lambda diff: getNeighboring(tiles, parents, x, y, *diff), 
-                                [(0, -1, 'up', 'down'), (1, 0, 'right', 'left'), (0, 1, 'down', 'up'), (-1, 0, 'left', 'right')])))
+    neighborings = list(map(lambda dir: (x + dir[0], y + dir[1], dir[2]), filter(lambda dir: isClear(tiles, parents, x, y, *dir), nearCells(tiles, x, y))))
     for n in neighborings:
         parents[n[0]][n[1]] = (x, y, n[2])
     return map(lambda x: x[0:2], neighborings);
@@ -69,7 +81,7 @@ def findPathToAny(tiles, playerX, playerY, quests):
     for q in quests:
         path = findPath(tiles, player_x, player_y, q['x'], q['y'])
         if path:
-            dirs = list(map(lambda x: x[2], path))
+            dirs = list(map(lambda x: x[2].upper(), path))
             return ' '.join(dirs)
     return None;
     
