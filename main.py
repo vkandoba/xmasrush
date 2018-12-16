@@ -63,25 +63,68 @@ def findPath(tiles, startX, startY, targetX, targetY):
         neighborings = getNeighborings(tiles, parents, *p)
         points.extend(neighborings)
     return None
-
-def getPush(tiles, playerX, playerY, targetX, targetY):
-    if playerY > targetY+1:
-        return (playerX, 'UP')
-    elif playerY < targetY-1:
-        return (playerX, 'DOWN')
-    if playerX > targetX+1:
+    
+def getComponent(tiles, startX, startY):
+    parents = [[0 for _ in range(side+1)] for _ in range(side+1)]
+    parents[startX][startY] = 1
+    component = [(startX, startY)];
+    neighborings = getNeighborings(tiles, parents, startX, startY)
+    points = deque(neighborings)
+    while len(points) > 0:
+        point = points.popleft()
+        component.append(point)
+        neighborings = getNeighborings(tiles, parents, *point)
+        points.extend(neighborings)
+    return component;
+    
+def getPushX(playerX, playerY, targetX, targetY):
+    if playerX > targetX:
         return (playerY, 'LEFT')
-    elif playerX < targetX-1:
+    elif playerX < targetX:
         return (playerY, 'RIGHT')
     return None
 
-def getTargets(tiles, playerX, playerY, quest):
-    print(quest, file=sys.stderr)    
-    print(playerX, playerY, file=sys.stderr) 
-    targets = list(map(lambda dir: (quest['x'] + dir[0], quest['y'] + dir[1]), 
-                        filter(lambda dir: canBeLink(tiles[playerX][playerY], tiles[quest['x'] + dir[0]][quest['y'] + dir[1]], dir[2]), nearCells(tiles, quest['x'], quest['y']))))
-    print(targets, file=sys.stderr)
+def getPushY(playerX, playerY, targetX, targetY):
+    if playerY > targetY:
+        return (playerX, 'UP')
+    elif playerY < targetY:
+        return (playerX, 'DOWN')
+    return None
+
+def getPush(tiles, playerX, playerY, targetX, targetY, questsX, questsY):
+    pushX = getPushX(playerX, playerY, targetX, targetY)
+    pushY = getPushY(playerX, playerY, targetX, targetY)
+    print(pushX, pushY, targetX, targetY, questsX, questsY, file=sys.stderr)     
+    if targetX == questsX:
+        if pushY != None:
+            return pushY
+        else:
+            return pushX
+    if targetY == questsY:    
+        if pushX != None:
+            return pushX
+        else:
+            return pushY
+    return None
+
+def getTargetsForPoint(tiles, playerX, playerY, pointX, pointY):
+    targets = list(map(lambda dir: (pointX + dir[0], pointY + dir[1]), 
+                        filter(lambda dir: canBeLink(tiles[pointX][pointY], tiles[playerX][playerY], dir[2]), nearCells(tiles, pointX, pointY))))
     return targets
+
+def getTargets(tiles, playerX, playerY, quest):
+    m = [[0 for _ in range(side+1)] for _ in range(side+1)]
+    print(quest, file=sys.stderr)    
+    component = getComponent(tiles, quest['x'], quest['y'])
+    targets = []
+    for p in component:
+        ptargets = getTargetsForPoint(tiles, playerX, playerY, *p)
+        for pt in ptargets:
+            if m[pt[0]][pt[1]] == 0:
+                targets.append((pt, p))
+                m[pt[0]][pt[1]] = 1
+    print(targets, file=sys.stderr)
+    return dict(targets)
     
 def findPathToAny(tiles, playerX, playerY, quests):
     for q in quests:
@@ -91,12 +134,22 @@ def findPathToAny(tiles, playerX, playerY, quests):
             return ' '.join(dirs)
     return None;
     
-def getPushToAny(tiles, playerX, playerY, quests):
-    targets = getTargets(tiles, playerX, playerY, quests[0])
+def getPushToQuest(tiles, playerX, playerY, quest):
+    targets = getTargets(tiles, playerX, playerY, quest)
+    if len(targets) == 0:
+        return None
     d = dict(zip(targets, map(lambda c: distance(playerX, playerY, c[0], c[1]), targets)))
     print(d, file=sys.stderr)    
     m = min(d, key=d.get)
-    return getPush(tiles, playerX, playerY, *m);
+    return (getPush(tiles, playerX, playerY, m[0], m[1], targets[m][0], targets[m][1]), d[m]);
+
+def getPushToAny(tiles, playerX, playerY, quests):
+    items = [];
+    for q in quests:
+        items.append(getPushToQuest(tiles, playerX, playerY, q))
+    print(items, file=sys.stderr) 
+    d = dict(filter(lambda x: x != None, items))
+    return min(d, key=d.get)
 
 while True:
     turn_type = int(input())
@@ -127,7 +180,7 @@ while True:
             print("PASS")
     else:
         dir = getPushToAny(tiles, player_x, player_y, myQuests)
-        if dir:
-            print('PUSH ' + dir)
+        if dir != None:
+            print('PUSH ' + str(dir[0]) + ' ' + dir[1])
         else:
             print('PUSH 6 LEFT')
