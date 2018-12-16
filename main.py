@@ -19,21 +19,21 @@ def safeInt(str):
     except ValueError:
         return str
 
+def distance(x1, y1, x2, y2):
+    return abs(x2 - x1) +  abs(y2 - y1)
+
 def isCoordinate(x, y):
     return 0 <= x and x <= side and 0 <= y and y <= side
 
 def nearCells(tiles, x, y):
     return filter(lambda dir: isCoordinate(x + dir[0], y + dir[1]), placeDirs)
 
-def isLinked(tiles, x, y, dx, dy, dirTo):
+def canBeLink(tile1, tile2, dirTo):
     dirFrom = opDir[dirTo]
-    return tiles[x][y][dirTo] == 1 and tiles[x + dx][y + dy][dirFrom] == 1
+    return tile1[dirTo] == 1 and tile2[dirFrom] == 1
 
 def isClear(tiles, parents, x, y, dx, dy, dirTo):
-    return parents[x + dx][y + dy] == 0 and isLinked(tiles, x, y, dx, dy, dirTo)
-
-def canBeNeighborings(parents, x, y):
-    return isCoordinate(x, y) and parents[x][y] == 0
+    return parents[x + dx][y + dy] == 0 and canBeLink(tiles[x][y], tiles[x + dx][y + dy], dirTo)
         
 def getNeighborings(tiles, parents, x, y):
     # print(tiles[x][y], file=sys.stderr)
@@ -65,18 +65,24 @@ def findPath(tiles, startX, startY, targetX, targetY):
     return None
 
 def getPush(tiles, playerX, playerY, targetX, targetY):
-    if playerX != targetX:
-        if playerY > targetY+1:
-            return (playerX, 'UP')
-        elif playerY < targetY-1:
-            return (playerX, 'DOWN')
-    if playerY != targetY:
-        if playerX > targetX+1:
-            return (playerY, 'LEFT')
-        elif playerX < targetX-1:
-            return (playerY, 'RIGHT')
-    return False
-   
+    if playerY > targetY+1:
+        return (playerX, 'UP')
+    elif playerY < targetY-1:
+        return (playerX, 'DOWN')
+    if playerX > targetX+1:
+        return (playerY, 'LEFT')
+    elif playerX < targetX-1:
+        return (playerY, 'RIGHT')
+    return None
+
+def getTargets(tiles, playerX, playerY, quest):
+    print(quest, file=sys.stderr)    
+    print(playerX, playerY, file=sys.stderr) 
+    targets = list(map(lambda dir: (quest['x'] + dir[0], quest['y'] + dir[1]), 
+                        filter(lambda dir: canBeLink(tiles[playerX][playerY], tiles[quest['x'] + dir[0]][quest['y'] + dir[1]], dir[2]), nearCells(tiles, quest['x'], quest['y']))))
+    print(targets, file=sys.stderr)
+    return targets
+    
 def findPathToAny(tiles, playerX, playerY, quests):
     for q in quests:
         path = findPath(tiles, player_x, player_y, q['x'], q['y'])
@@ -86,14 +92,12 @@ def findPathToAny(tiles, playerX, playerY, quests):
     return None;
     
 def getPushToAny(tiles, playerX, playerY, quests):
-    for q in quests:
-        push = getPush(tiles, player_x, player_y, q['x'], q['y'])
-        if push != False:
-            return str(push[0]) + ' ' + push[1]
-    return False;  
+    targets = getTargets(tiles, playerX, playerY, quests[0])
+    d = dict(zip(targets, map(lambda c: distance(playerX, playerY, c[0], c[1]), targets)))
+    print(d, file=sys.stderr)    
+    m = min(d, key=d.get)
+    return getPush(tiles, playerX, playerY, *m);
 
-# Help the Christmas elves fetch presents in a magical labyrinth!
-# game loop
 while True:
     turn_type = int(input())
     tiles1 = [list(map(lambda s: dict(zip(['up', 'right', 'down', 'left'], map(int, s))), input().split())) for i in range(side+1)]
